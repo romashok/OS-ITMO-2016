@@ -11,15 +11,17 @@ const unsigned int STD_OUT = 1;
 void cat(int infd, int outfd) {
 	char buf[BUF_SIZE];
 	ssize_t received = 0;
-	while ((received = read(infd, buf, BUF_SIZE)) > 0) {
+	while ((received = read(infd, buf, BUF_SIZE)) > 0 || errno == EINTR) {
 		ssize_t parcel = 0;
 		while (parcel < received) {
 			ssize_t cur = write(outfd, buf + parcel, received - parcel);
 			if (cur >= 0) {
 				parcel += cur;	
 			} else {
-				fprintf(stderr, "Writing error occured:\n%s\n", strerror(errno));	
-				return;
+				if (errno != EINTR) {
+					fprintf(stderr, "Writing error occured:\n%s\n", strerror(errno));	
+					return;
+				}
 			}
 		}
 	}
